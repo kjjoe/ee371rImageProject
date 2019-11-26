@@ -26,8 +26,9 @@ import math
 # ap.add_argument("-t", "--threshold", type=float, default=0.3,
 # 	help="threshold when applyong non-maxima suppression")
 # args = vars(ap.parse_args())
-file = "6"
-arg_input = "videos/" + file + ".mp4"
+file = "1"
+# arg_input = "videos/" + file + ".mp4"
+arg_input = "videos/project_video.mp4"
 arg_output = file + "yolo.avi"
 arg_yolo = "yolo-coco"
 arg_conf = 0.5
@@ -46,8 +47,6 @@ COLORS = np.random.randint(0, 255, size=(len(LABELS), 3),
 # derive the paths to the YOLO weights and model configuration
 weightsPath = os.path.sep.join([arg_yolo, "yolov3.weights"])
 configPath = os.path.sep.join([arg_yolo, "yolov3.cfg"])
-
-print(configPath)
 
 # load our YOLO object detector trained on COCO dataset (80 classes)
 # and determine only the *output* layer names that we need from YOLO
