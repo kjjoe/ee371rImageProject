@@ -26,9 +26,9 @@ import math
 # ap.add_argument("-t", "--threshold", type=float, default=0.3,
 # 	help="threshold when applyong non-maxima suppression")
 # args = vars(ap.parse_args())
-file = "1"
-# arg_input = "videos/" + file + ".mp4"
-arg_input = "videos/project_video.mp4"
+file = "150"
+arg_input = "videos/" + file + ".mp4"
+# arg_input = "videos/project_video.mp4"
 arg_output = file + "yolo.avi"
 arg_yolo = "yolo-coco"
 arg_conf = 0.5
