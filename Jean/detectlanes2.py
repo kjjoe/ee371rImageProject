@@ -558,7 +558,7 @@ class Lane():
 
 
 if __name__ == "__main__":
-
+    print('start')
     CAL_IMGS = "camera_cal"
     calib_files = os.listdir(CAL_IMGS)
     assert(len(calib_files) > 0)
@@ -567,7 +567,7 @@ if __name__ == "__main__":
     OUTDIR = "output_images/"
     create_dir(OUTDIR)
     # Just checking the image
-    draw_imgs(calib_files, len(calib_files)//2, dosave=True, save_dir=OUTDIR)
+    # draw_imgs(calib_files, len(calib_files)//2, dosave=True, save_dir=OUTDIR)
     
     
     ##########   Calibration    ############
@@ -582,9 +582,10 @@ if __name__ == "__main__":
     
     failed =[]
     
+    print("calibrating")    
     for idx, name in enumerate(calib_files):
         img = cv2.imread(CAL_IMGS + "/"+ name)
-        
+        print(".")
         # Convert to grayscale
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         
@@ -599,17 +600,6 @@ if __name__ == "__main__":
             corners = cv2.cornerSubPix(gray,corners,(11,11),(-1,-1),criteria)
             
             imgpoints.append(corners)
-            
-            # Draw and display the corners
-#            cv2.drawChessboardCorners(img, (nx, ny), corners, ret)
-#            f, (ax1, ax2) = plt.subplots(1, 2, figsize=(12,8))
-#            f.tight_layout()
-#            ax1.imshow(cv2.cvtColor(cv2.imread(CAL_IMGS + "/"+ name), cv2.COLOR_BGR2RGB))
-#            ax1.set_title("Original:: " + name, fontsize=18)
-#            ax2.imshow(cv2.cvtColor(img,cv2.COLOR_BGR2RGB))
-#            ax2.set_title("Corners:: "+ name, fontsize=18)
-#            f.savefig(OUTDIR + "/op_" + str(time.time()) + ".jpg")
-            
         else:
             failed.append(name)
             
@@ -618,43 +608,7 @@ if __name__ == "__main__":
     print("]")
 #        
 #    ##########  END Calibration    ############
-#    
-#    ########## Distortion correction  ##########
-#    
-#    undist = undistort(CAL_IMGS+"/calibration10.jpg", objpoints, imgpoints)
-#    f, (ax1, ax2) = plt.subplots(1, 2, figsize=(12,8))
-#    f.tight_layout()
-#    ax1.imshow(cv2.cvtColor(cv2.imread(CAL_IMGS+"/calibration10.jpg"), cv2.COLOR_BGR2RGB))
-#    ax1.set_title("Original:: calibration10.jpg" , fontsize=18)
-#    ax2.imshow(cv2.cvtColor(undist,cv2.COLOR_BGR2RGB))
-#    ax2.set_title("Undistorted:: calibration10.jpg", fontsize=18)
-#    f.savefig(OUTDIR + "/op_" + str(time.time()) + ".jpg")
-#
-#    images = glob.glob('test_images/test*.jpg')
-#    for image in images:
-#        undist = undistort(image, objpoints, imgpoints)
-#        f, (ax1, ax2) = plt.subplots(1, 2, figsize=(12,8))
-#        f.tight_layout()
-#        ax1.imshow(cv2.cvtColor(cv2.imread(image), cv2.COLOR_BGR2RGB))
-#        ax1.set_title("Original:: " + image , fontsize=18)
-#        ax2.imshow(cv2.cvtColor(undist, cv2.COLOR_BGR2RGB))
-#        ax2.set_title("Undistorted:: "+ image, fontsize=18)
-#        f.savefig(OUTDIR + "/op_" + str(time.time()) + ".jpg")
-#
-#    #########################################
-#    
-#    ########## Gradient and Color transform  ############
-#    img = undistort(images[0], objpoints, imgpoints)
-#    
-#    combined_binary = abs_thresh(img, sobel_kernel=3, mag_thresh=(30, 100), direction='x')
-#    warped, warp_matrix, unwarp_matrix, out_img_orig, out_warped_img = transform_image(combined_binary, offset=300)
-#    f, (ax1, ax2) = plt.subplots(1, 2, figsize=(12,8))
-#    f.tight_layout()
-#    ax1.imshow(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
-#    ax1.set_title("Original:: " + image , fontsize=18)
-#    ax2.imshow(warped, cmap='gray')
-#    ax2.set_title("Transformed:: "+ image, fontsize=18)
-#        
+
 #    # Testing the threshholding
     kernel_size = 5
     mag_thresh = (30, 100)
@@ -663,68 +617,9 @@ if __name__ == "__main__":
     b_thresh = (160, 255)
     g_thresh = (210, 255)
 #    
-#    for image_name in images:
-#        img = undistort(image_name, objpoints, imgpoints)
-#        
-#        combined_binary = get_bin_img(img, kernel_size=kernel_size, sobel_thresh=mag_thresh, r_thresh=r_thresh, 
-#                                      s_thresh=s_thresh, b_thresh = b_thresh, g_thresh=g_thresh)
-#        
-#        f, (ax1, ax2) = plt.subplots(1, 2, figsize=(12,8))
-#        f.tight_layout()
-#        ax1.imshow(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
-#        ax1.set_title("Original:: " + image , fontsize=18)
-#        ax2.imshow(combined_binary, cmap='gray')
-#        ax2.set_title("Threshold Binary:: "+ image, fontsize=18)
-#        f.savefig(OUTDIR + "/op_" + str(time.time()) + ".jpg")    
-#    
-#    #########################################
-#    
-#    
-#    
-#    ##############   Perspective transform   #####################
-#    for image in images:
-#        img = cv2.imread(image)
-#        warped, M, minv, out_img_orig, out_warped_img = transform_image(img)
-#        f, (ax1, ax2) = plt.subplots(1, 2, figsize=(12,8))
-#        f.tight_layout()
-#        ax1.imshow(cv2.cvtColor(out_img_orig, cv2.COLOR_BGR2RGB))
-#        ax1.set_title("Original:: " + image , fontsize=18)
-#        ax2.imshow(cv2.cvtColor(out_warped_img, cv2.COLOR_BGR2RGB))
-#        ax2.set_title("Warped:: "+ image, fontsize=18)
-#        f.savefig(OUTDIR + "/op_" + str(time.time()) + ".jpg")
-#    
-#    
-#    ########################################
-#    
-#
-#    ############   Radius of curvature   ####################
-#    
-#    for image in images:    
-#        img = undistort(image, objpoints, imgpoints)
-#        
-#        combined_binary = get_bin_img(img, kernel_size=kernel_size, sobel_thresh=mag_thresh, r_thresh=r_thresh, 
-#                                      s_thresh=s_thresh, b_thresh = b_thresh, g_thresh=g_thresh)
-#        warped, warp_matrix, unwarp_matrix, out_img_orig, out_warped_img = transform_image(combined_binary)
-#        
-#        xmtr_per_pixel=3.7/800
-#        ymtr_per_pixel=30/720
-#        
-#        left_fit, right_fit, left_fitx, right_fitx, left_lane_indices, right_lane_indices, out_img = fit_polynomial(warped, nwindows=12, show=False)
-#        lane_img = draw_lines(img, left_fit, right_fit, minv)
-#        out_img = show_curvatures(lane_img, left_fit, right_fit, xmtr_per_pixel, ymtr_per_pixel)
-#        
-#        f, (ax1, ax2) = plt.subplots(1, 2, figsize=(12,8))
-#        f.tight_layout()
-#        ax1.imshow(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
-#        ax1.set_title("Original:: " + image , fontsize=18)
-#        ax2.imshow(cv2.cvtColor(out_img, cv2.COLOR_BGR2RGB))
-#        ax2.set_title("Lane:: "+ image, fontsize=18)
-#        f.savefig(OUTDIR + "/op_" + str(time.time()) + ".jpg")
-#    
-#    #########################################################
-#    
 #    
     #############   Pipeline for video   ##################
+    print("reading video")
     clip1 = VideoFileClip("project_video.mp4")
     img = clip1.get_frame(0)
 #    plt.clf()
@@ -770,21 +665,20 @@ if __name__ == "__main__":
     
     lane1.set_presp_indices(src, dst)
     
-    output = "test_videos_output/project.mp4"
+    output = "test_videos_output/project2.avi"
     #clip1 = cv2.VideoCapture("project_video.mp4")
     clip1 = VideoFileClip("project_video.mp4")
     #clip1.reader.close()
     #clip1.audio.reader.close_proc()
     #clip1.audio.reader.close_proc()
     #white_clip = lane1.process_image(clip1)
-    plt.clf()
-    for frame in range(100):
+    # plt.clf()
+    for frame in range(5):
         img = clip1.get_frame(frame)
         detected_lanes_matrix, white_clip = lane1.process_image(img)
         #white_clip = clip1.fl_image(lane1.process_image)  
         #clip1.close()
         #white_clip.preview(fps=25,audio=False) # don't generate/play the audio.
-        plt.imshow(white_clip)
-        plt.savefig('lane.pdf')
+        plt.imshow(detected_lanes_matrix)
     ######################################################
     
