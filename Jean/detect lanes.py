@@ -464,7 +464,7 @@ def draw_lines(img, left_fit, right_fit, minv):
     
     # Warp the blank back to original image space using inverse perspective matrix 
     unwarp_img = cv2.warpPerspective(color_warp, minv, (img.shape[1], img.shape[0]), flags=cv2.WARP_FILL_OUTLIERS+cv2.INTER_CUBIC)
-    return cv2.addWeighted(img, 1, unwarp_img, 0.3, 0)
+    return unwarp_img,cv2.addWeighted(img, 1, unwarp_img, 0.3, 0)
 
 
 def show_curvatures(img, leftx, rightx, xmtr_per_pixel, ymtr_per_pixel):
@@ -546,12 +546,12 @@ class Lane():
             
         self.counter += 1
         
-        lane_img = draw_lines(img, left_fit, right_fit, unwarp_matrix)
+        unwarp_img, lane_img = draw_lines(img, left_fit, right_fit, unwarp_matrix)
         out_img = show_curvatures(lane_img, left_fit, right_fit, xmtr_per_pixel, ymtr_per_pixel)
         
         self.update_fit(left_fit, right_fit)
         
-        return out_img
+        return unwarp_img, out_img
 ################################################
 
 
@@ -725,8 +725,16 @@ if __name__ == "__main__":
 #    
 #    
     #############   Pipeline for video   ##################
-    clip1 = VideoFileClip("33.mp4")
+    clip1 = VideoFileClip("project_video.mp4")
     img = clip1.get_frame(0)
+#    plt.clf()
+#    plt.imshow(img)
+#    plt.savefig('img-1.pdf')
+
+    img1 = clip1.get_frame(20)
+#    plt.clf()
+#    plt.imshow(img1)
+#    plt.savefig('img-2.pdf')
     
     leftupper  = (585, 460)
     rightupper = (705, 460)
@@ -744,8 +752,6 @@ if __name__ == "__main__":
     cv2.line(img, rightupper, rightlower, color_r, line_width)
     cv2.line(img, rightupper, leftupper, color_g, line_width)
     
-    plt.imshow(img)
-
 
     lane1 = Lane(max_counter=5)
     
@@ -765,12 +771,19 @@ if __name__ == "__main__":
     lane1.set_presp_indices(src, dst)
     
     output = "test_videos_output/project.mp4"
-    clip1 = VideoFileClip("33.mp4")
+    #clip1 = cv2.VideoCapture("project_video.mp4")
+    clip1 = VideoFileClip("project_video.mp4")
     #clip1.reader.close()
     #clip1.audio.reader.close_proc()
     #clip1.audio.reader.close_proc()
-    white_clip = clip1.fl_image(lane1.process_image)  
-    #clip1.close()
-    white_clip.preview(fps=25,audio=False) # don't generate/play the audio.
+    #white_clip = lane1.process_image(clip1)
+    plt.clf()
+    for frame in range(100):
+        img = clip1.get_frame(frame)
+        detected_lanes_matrix, white_clip = lane1.process_image(img)
+        #white_clip = clip1.fl_image(lane1.process_image)  
+        #clip1.close()
+        #white_clip.preview(fps=25,audio=False) # don't generate/play the audio.
+        plt.imshow(white_clip)
     ######################################################
     
