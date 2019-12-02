@@ -566,13 +566,13 @@ class Lane():
 ################################################
 
 
-################################################
-###################### MAIN ####################
-################################################
+################################################################################################################################################
+###################### MAIN START ##############################################################################################################
+################################################################################################################################################
 if __name__ == "__main__":
 
 	##### INITIALIZE YOLO, OPTICAL FLOW,  ########
-	file = "343"
+	file = "clip"
 	arg_input = "kevin/videos/" + file + ".mp4"
 	# arg_input = "kevin/videos/project_video.mp4"
 	arg_output = file + "yolo.avi"
@@ -582,7 +582,7 @@ if __name__ == "__main__":
 
 
 	# load the COCO class labels our YOLO model was trained on
-	labelsPath = os.path.sep.join([arg_yolo, "coco.names"])
+	labelsPath = os.path.sep.join(["kevin/yolo-coco/coco.names"])
 	LABELS = open(labelsPath).read().strip().split("\n")
 
 	# initialize a list of colors to represent each possible class label
@@ -598,6 +598,10 @@ if __name__ == "__main__":
 	# and determine only the *output* layer names that we need from YOLO
 	print("[INFO] loading YOLO from disk...")
 	net = cv2.dnn.readNetFromDarknet(configPath, weightsPath)
+	# net.setPreferableBackend(cv2.dnn.DNN_BACKEND_CUDA)  # to run on gpu
+	# net.setPreferableTarget(cv2.dnn.DNN_TARGET_CUDA)    #
+	ln = net.getLayerNames()
+
 	ln = net.getLayerNames()
 	ln = [ln[i[0] - 1] for i in net.getUnconnectedOutLayers()]
 
@@ -767,7 +771,7 @@ if __name__ == "__main__":
 		# construct a blob from the input frame and then perform a forward
 		# pass of the YOLO object detector, giving us our bounding boxes
 		# and associated probabilities
-		blob = cv2.dnn.blobFromImage(frame, 1 / 255.0, (416, 416),
+		blob = cv2.dnn.blobFromImage(frame, 1 / 255.0, (128, 128),
 			swapRB=True, crop=False)
 		net.setInput(blob)
 		start = time.time()
@@ -824,6 +828,7 @@ if __name__ == "__main__":
 
 		# calculate optical flow
 		flow = cv2.calcOpticalFlowFarneback(prvs,next, None, 0.5, 3, 15, 3, 5, 1.2, 0)
+
 		mag, ang = cv2.cartToPolar(flow[...,0], flow[...,1])  # convert to polar coord
 
 		hsv[...,0] = ang*180/np.pi/2                          		# set angle to hue 
@@ -831,6 +836,8 @@ if __name__ == "__main__":
 		rgb = cv2.cvtColor(hsv,cv2.COLOR_HSV2BGR)
 
 		size = mag.shape
+		# size2 = flow.shape
+		# print(size)
 
 		# display in gui
 		
@@ -842,12 +849,18 @@ if __name__ == "__main__":
 		    cv2.imwrite('opticalhsv.png',rgb)
 		prvs = next
 
-		# write to video
+		# write to video intialization
 		if writer2 is None:
 			fourcc = cv2.VideoWriter_fourcc(*"MJPG")
 			writer2 = cv2.VideoWriter(file + "optical.avi", fourcc, 30,(frame.shape[1], frame.shape[0]), True)
-		# write the output frame to disk
 		
+		# draw arrows
+		for x in range(0,720,10):
+			for y in range(0,1280,10):
+				pt1 = (y,x)
+				pt2 = (int(flow[x,y,1]+y),int(flow[x,y,0]+x))
+				cv2.arrowedLine(frame, pt1, pt2, (0,0,255), 1)
+
 
 		#### resume yolo and bounding box. include information on optical flow
 		# ensure at least one detection exists
@@ -924,9 +937,9 @@ if __name__ == "__main__":
 			fourcc = cv2.VideoWriter_fourcc(*"MJPG")
 			writer3 = cv2.VideoWriter(file + "lane.avi", fourcc, 30,(frame.shape[1], frame.shape[0]), True)
 
-		cv2.imshow('yolo',frame)
-		cv2.imshow('optical',rgb)
-		cv2.imshow('lanes',detected_lanes_matrix)
+		# cv2.imshow('yolo',frame)
+		cv2.imshow('optical',frame)
+		# cv2.imshow('lanes',detected_lanes_matrix)
 		# write the output frame to disk
 		writer.write(frame)
 		writer2.write(rgb)
