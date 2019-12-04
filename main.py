@@ -16,6 +16,8 @@ import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
 import glob
 import time
+import calibration
+# import farneback3d
 
 from moviepy.editor import VideoFileClip
 from IPython.display import HTML
@@ -484,16 +486,15 @@ def show_curvatures(img, leftx, rightx, xmtr_per_pixel, ymtr_per_pixel):
     
     out_img = np.copy(img)
     avg_rad = round(np.mean([left_curvature, right_curvature]),0)
-    cv2.putText(out_img, 'Average lane curvature: {:.2f} m'.format(avg_rad), 
-                (50, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (255,255,255), 2)
-    cv2.putText(out_img, dist_txt, (50, 100), cv2.FONT_HERSHEY_SIMPLEX, 1, (255,255,255), 2)
+
+    ## input text of the curvature and stuff. not necessary
+    # cv2.putText(out_img, 'Average lane curvature: {:.2f} m'.format(avg_rad), 
+    #             (50, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (255,255,255), 2)
+    # cv2.putText(out_img, dist_txt, (50, 100), cv2.FONT_HERSHEY_SIMPLEX, 1, (255,255,255), 2)
     
     return out_img
 
 #############################################
-
-
-
 
 #############  Pipeline for video   #############
     
@@ -559,11 +560,22 @@ class Lane():
         
         unwarp_img, lane_img = draw_lines(img, left_fit, right_fit, unwarp_matrix)
         out_img = show_curvatures(lane_img, left_fit, right_fit, xmtr_per_pixel, ymtr_per_pixel)
-        
         self.update_fit(left_fit, right_fit)
         
         return unwarp_img, out_img
 ################################################
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 ################################################################################################################################################
@@ -571,16 +583,17 @@ class Lane():
 ################################################################################################################################################
 if __name__ == "__main__":
 
-	##### INITIALIZE YOLO, OPTICAL FLOW,  ########
-	file = "clip"
+	########### Initial Inputs #################
+	file = "speedway"
 	arg_input = "kevin/videos/" + file + ".mp4"
 	# arg_input = "kevin/videos/project_video.mp4"
 	arg_output = file + "yolo.avi"
 	arg_yolo = "kevin/yolo-coco"
 	arg_conf = 0.5
 	arg_thresh = 0.3
+	############################################
 
-
+	######### Initialize YOLO ##################
 	# load the COCO class labels our YOLO model was trained on
 	labelsPath = os.path.sep.join(["kevin/yolo-coco/coco.names"])
 	LABELS = open(labelsPath).read().strip().split("\n")
@@ -601,8 +614,6 @@ if __name__ == "__main__":
 	# net.setPreferableBackend(cv2.dnn.DNN_BACKEND_CUDA)  # to run on gpu
 	# net.setPreferableTarget(cv2.dnn.DNN_TARGET_CUDA)    #
 	ln = net.getLayerNames()
-
-	ln = net.getLayerNames()
 	ln = [ln[i[0] - 1] for i in net.getUnconnectedOutLayers()]
 
 	# initialize the video stream, pointer to output video file, and
@@ -614,12 +625,12 @@ if __name__ == "__main__":
 	# initialization for optical flow
 	ret, frame1 = vs.read() # read initial frame
 	prvs = cv2.cvtColor(frame1,cv2.COLOR_BGR2GRAY)
-	hsv = np.zeros_like(frame1)   
-	hsv[...,1] = 255
-	writer2 = None
+	# hsv = np.zeros_like(frame1)   
+	# hsv[...,1] = 255
+	# writer2 = None
 
 	## initialization for lanes
-	writer3 = None
+	# writer3 = None
 
 	# try to determine the total number of frames in the video file
 	try:
@@ -634,59 +645,10 @@ if __name__ == "__main__":
 		# print("[INFO] could not determine # of frames in video")
 		# print("[INFO] no approx. completion time can be provided")
 		total = -1
+	############################################
+	
 
-	###################### BEGIN CALIBRATION AND JEAN CODE ######################
-	CAL_IMGS = "Jean/camera_cal"
-	calib_files = os.listdir(CAL_IMGS)
-	assert(len(calib_files) > 0)
-
-	# Create directory to save output directory
-	OUTDIR = "Jean/output_images/"
-	create_dir(OUTDIR)
-	# Just checking the image
-	# draw_imgs(calib_files, len(calib_files)//2, dosave=True, save_dir=OUTDIR)
-
-
-	##########   Calibration    ############
-	nx = 9
-	ny = 6
-
-	objp = np.zeros((ny * nx, 3), np.float32)
-	objp[:,:2] = np.mgrid[:nx, :ny].T.reshape(-1, 2)
-
-	objpoints = [] # 3d points in real world space
-	imgpoints = [] # 2d points in image plane.
-
-	failed =[]
-
-	print("calibrating")    
-	for idx, name in enumerate(calib_files):
-	    img = cv2.imread(CAL_IMGS + "/"+ name)
-	    print(".")
-	    # Convert to grayscale
-	    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-	    
-	    criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 0.001)
-	    
-	    # Find the chessboard corners
-	    ret, corners = cv2.findChessboardCorners(gray, (nx, ny), None)
-	    
-	    if ret == True:
-	        objpoints.append(objp)
-	        
-	        corners = cv2.cornerSubPix(gray,corners,(11,11),(-1,-1),criteria)
-	        
-	        imgpoints.append(corners)
-	    else:
-	        failed.append(name)
-	        
-	print("Failed for images: [")
-	print(failed)
-	print("]")
-	#        
-	#    ##########  END Calibration    ############
-
-
+	##### BEGIN CALIBRATION AND JEAN CODE ######
 	#    # Testing the threshholding
 	kernel_size = 5
 	mag_thresh = (30, 100)
@@ -694,73 +656,69 @@ if __name__ == "__main__":
 	s_thresh = (165, 255)
 	b_thresh = (160, 255)
 	g_thresh = (210, 255)
-	#    
-	#    
-	#############   Pipeline for video   ##################
-	# clip1 = VideoFileClip(arg_input)
-	# img = clip1.get_frame(0)
-	#    plt.clf()
-	#    plt.imshow(img)
-	#    plt.savefig('img-1.pdf')
+   
+	#############   Hard coding for certain videos ##################
 
-	# img1 = clip1.get_frame(20)
-	#    plt.clf()
-	#    plt.imshow(img1)
-	#    plt.savefig('img-2.pdf')
+	###########   Project Video   ##############
 
-	leftupper  = (585, 460)
-	rightupper = (705, 460)
-	leftlower  = (210, img.shape[0])
-	rightlower = (1080, img.shape[0])
+	# leftupper  = (585, 460)
+	# rightupper = (705, 460)
+	# leftlower  = (210, img.shape[0])
+	# rightlower = (1080, img.shape[0])
+
+    
+    ######################################
+
+
+
+        ###########   Highway   ##############
+       
+#        if frame < 6:
+#            leftupper  = (390,1000)
+#            rightupper = (620,1000)
+#            leftlower  = (0, 1500)
+#            rightlower = (900, 1500)   
+#        else:
+# 
+#            leftupper  = (300,900)
+#            rightupper = (700,900)
+#            leftlower  = (0, 1500)
+#            rightlower = (img.shape[1], 1500)   
+    
+    ######################################  
+
 	    
+    #############   343   ################
+	# leftupper  = (520,330)
+	# rightupper = (620,330)
+	# leftlower  = (350, 550)
+	# rightlower = (1100, 550)  
+
+    #######################################    
+
+
+    ##### LOAD CALIBRATION VALUES ########
+
 	color_r = [255, 0, 0]
 	color_g = [0, 255, 0]
 	line_width = 5
-	    
-	src = np.float32([leftupper, leftlower, rightupper, rightlower])
 
-	cv2.line(img, leftlower, leftupper, color_r, line_width)
-	cv2.line(img, leftlower, rightlower, color_r , line_width * 2)
-	cv2.line(img, rightupper, rightlower, color_r, line_width)
-	cv2.line(img, rightupper, leftupper, color_g, line_width)
+	objpoints, imgpoints = calibration.cal_array()
 
-
-	lane1 = Lane(max_counter=5)
-
-	leftupper  = (585, 460)
-	rightupper = (705, 460)
-	leftlower  = (210, img.shape[0])
-	rightlower = (1080, img.shape[0])
-	    
-	warped_leftupper = (250,0)
-	warped_rightupper = (250, img.shape[0])
-	warped_leftlower = (1050, 0)
-	warped_rightlower = (1050, img.shape[0])
-
-	src = np.float32([leftupper, leftlower, rightupper, rightlower])
-	dst = np.float32([warped_leftupper, warped_rightupper, warped_leftlower, warped_rightlower])
-
-	lane1.set_presp_indices(src, dst)
-    
-    # output = "test_videos_output/project2.avi"
-    # clip1 = VideoFileClip("project_video.mp4")
-    # for frame in range(5):
-    #     img = clip1.get_frame(frame)
-    #     detected_lanes_matrix, white_clip = lane1.process_image(img)
-    #     #white_clip = clip1.fl_image(lane1.process_image)  
-    #     #clip1.close()
-    #     #white_clip.preview(fps=25,audio=False) # don't generate/play the audio.
-    #     plt.imshow(detected_lanes_matrix)
-
+	########################################
 
 	#################### READ FRAMES ########################
 	# loop over frames from the video file stream
+
+	counter = 0;
 	while True:
+		# counter frames
+		counter += 1
+		print("[INFO] Frame {:d}".format(counter))
 		# read the next frame from the file
 		(grabbed, frame) = vs.read()
 
-		# if the frame was not grabbed, then we have reached the end
-		# of the stream
+		# if the frame was not grabbed, then we have reached the end of the stream
 		if not grabbed:
 			break
 
@@ -771,12 +729,14 @@ if __name__ == "__main__":
 		# construct a blob from the input frame and then perform a forward
 		# pass of the YOLO object detector, giving us our bounding boxes
 		# and associated probabilities
-		blob = cv2.dnn.blobFromImage(frame, 1 / 255.0, (128, 128),
+		blob = cv2.dnn.blobFromImage(frame, 1 / 255.0, (416, 416),
 			swapRB=True, crop=False)
 		net.setInput(blob)
 		start = time.time()
 		layerOutputs = net.forward(ln)
 		end = time.time()
+		print("[INFO] single frame in network takes {:.4f} seconds".format(end-start))
+
 
 		# initialize our lists of detected bounding boxes, confidences,
 		# and class IDs, respectively
@@ -821,26 +781,30 @@ if __name__ == "__main__":
 		idxs = cv2.dnn.NMSBoxes(boxes, confidences, arg_conf,
 			arg_thresh)
 
-		# pause on yolo
 
 		############ optical flow
 		next = cv2.cvtColor(frame,cv2.COLOR_BGR2GRAY)
 
 		# calculate optical flow
+		startopt = time.time()
 		flow = cv2.calcOpticalFlowFarneback(prvs,next, None, 0.5, 3, 15, 3, 5, 1.2, 0)
+		# optflow = farneback3d.Farneback(
+		# 	pyr_scale=0.5,         # Scaling between multi-scale pyramid levels
+		# 	levels=3,              # Number of multi-scale levels
+		# 	num_iterations=3,      # Iterations on each multi-scale level
+		# 	winsize=15,             # Window size for Gaussian filtering of polynomial coefficients
+		# 	poly_n=5,              # Size of window for weighted least-square estimation of polynomial coefficients
+		# 	poly_sigma=1.2,        # Sigma for Gaussian weighting of least-square estimation of polynomial coefficients
+  		#   	)
+		# # calculate frame-to-frame flow between vol0 and vol1
+		# flow = optflow.calc_flow(prvs, next)
 
+		endopt = time.time()
+		print("[INFO] single optical flow takes {:.4f} seconds".format(endopt-startopt))
 		mag, ang = cv2.cartToPolar(flow[...,0], flow[...,1])  # convert to polar coord
-
-		hsv[...,0] = ang*180/np.pi/2                          		# set angle to hue 
-		hsv[...,2] = cv2.normalize(mag,None,0,255,cv2.NORM_MINMAX)  # set magnitue to value
-		rgb = cv2.cvtColor(hsv,cv2.COLOR_HSV2BGR)
-
 		size = mag.shape
-		# size2 = flow.shape
-		# print(size)
 
-		# display in gui
-		
+		# display in gui. required for cv2.imshow frames
 		k = cv2.waitKey(30) & 0xff
 		if k == 27:
 		    break
@@ -848,76 +812,199 @@ if __name__ == "__main__":
 		    cv2.imwrite('opticalfb.png',frame)
 		    cv2.imwrite('opticalhsv.png',rgb)
 		prvs = next
-
-		# write to video intialization
-		if writer2 is None:
-			fourcc = cv2.VideoWriter_fourcc(*"MJPG")
-			writer2 = cv2.VideoWriter(file + "optical.avi", fourcc, 30,(frame.shape[1], frame.shape[0]), True)
 		
-		# draw arrows
-		for x in range(0,720,10):
-			for y in range(0,1280,10):
-				pt1 = (y,x)
-				pt2 = (int(flow[x,y,1]+y),int(flow[x,y,0]+x))
-				cv2.arrowedLine(frame, pt1, pt2, (0,0,255), 1)
+		### draw arrows for optical flow
+		# for y in range(0,720,10):
+		# 	for x in range(0,1280,10):
+		# 		pt1 = (x,y)
+		# 		pt2 = (int(flow[y,x,0]+x),int(flow[y,x,1]+y))
+		# 		cv2.arrowedLine(frame, pt1, pt2, (0,0,255), 1)
 
+		######## DETECT LANES - JEAN CODE ###########
 
-		#### resume yolo and bounding box. include information on optical flow
-		# ensure at least one detection exists
+		###########   Speedway   ###########
+		if counter < 6:
+			leftupper  = (470, 750)
+			rightupper = (550, 750)
+			leftlower  = (250, frame.shape[0])
+			rightlower = (800, frame.shape[0])  
 
+		else: 
+			leftupper  = (550, 750)
+			rightupper = (650, 750)
+			leftlower  = (300, frame.shape[0])
+			rightlower = (900, frame.shape[0])   
+		#####################################
+
+		src = np.float32([leftupper, leftlower, rightupper, rightlower])
+
+		cv2.line(frame, leftlower, leftupper, color_r, line_width)
+		cv2.line(frame, leftlower, rightlower, color_r , line_width * 2)
+		cv2.line(frame, rightupper, rightlower, color_r, line_width)
+		cv2.line(frame, rightupper, leftupper, color_g, line_width)
+
+		lane1 = Lane(max_counter=5)
+		    
+		warped_leftupper = (250,0)
+		warped_rightupper = (250, frame.shape[0])
+		warped_leftlower = (1050, 0)
+		warped_rightlower = (1050, frame.shape[0])
+
+		src = np.float32([leftupper, leftlower, rightupper, rightlower])
+		dst = np.float32([warped_leftupper, warped_rightupper, warped_leftlower, warped_rightlower])
+
+		lane1.set_presp_indices(src, dst)
+	
+
+		startlanes = time.time()
+		detected_lanes_matrix, white_clip = lane1.process_image(frame)
+		endlanes = time.time()
+
+		print("[INFO] single frame for lane takes {:.4f} seconds".format(endlanes-startlanes))
+
+		detected_lanes_matrix = detected_lanes_matrix[...,1]
+
+		length_lane_tmp = np.mean(detected_lanes_matrix,axis = 1)
+		length_lane_nonzero = np.nonzero(length_lane_tmp)
+		length_lane_max = np.amax(length_lane_nonzero,axis=1)
+		length_lane_min = np.amin(length_lane_nonzero,axis=1)
+		length_lane = length_lane_max - length_lane_min
+
+		####################################################
+
+		######### PROCESSING FOR EACH BOUNDING BOX ##########
+		startallbox = time.time()
 		if len(idxs) > 0:
 			# loop over the indexes we are keeping
 			for i in idxs.flatten():
 				# extract the bounding box coordinates
 				(x, y) = (boxes[i][0], boxes[i][1])
 				(w, h) = (boxes[i][2], boxes[i][3])
+				
+				# make sure bounding box is not out of bounds
+				x_max = x+w
+				y_max = y+h	
 
-				# draw a bounding box rectangle and label on the frame
+				if x < 0: 
+					x = 0
+				if y < 0:
+					y = 0
+				if x+w >= size[1]:
+					x_max = size[1]-1
+				if y+h >= size[0]:
+					y_max = size[0]-1
+
+				# sum of flow in x and y directions
+				x_sum = np.sum(flow[y:y_max , x:x_max,0])
+				y_sum = np.sum(flow[y:y_max , x:x_max,1])
+
+				# flat scaling. 1000 is arbitrary
+				x_sum = x_sum/1000
+				y_sum = y_sum/1000
+
+
+				# calculate vectors for get a sense of direction of bounding box. For 'WARNINGS'
+				x_mid = np.mean([x,x_max])
+				y_mid = np.mean([y,y_max])
+
+				pt1 = (int(x_mid),int(y_mid))  # center of bounding box
+				pt2 = (int(x_sum+x_mid),int(y_sum+y_mid)) # end point of optical flow arrow
+				pt3 = (int(size[1]/2), int(size[0]) ) # bottom of lane
+				pt4 = (int(size[1]/2), int(length_lane_min) ) # top of lane
+
+				diff_arrow = np.subtract(pt2,pt1);  # difference between arrow and center
+				diff_car = np.subtract(pt3,pt1);	# difference between bottom of lane and center
+				diff_lane = np.subtract(pt4,pt1);	# difference between top of lane and center
+
+				# magnitude and angles	
+				mag_arrow, angles_arrow = cv2.cartToPolar(int(diff_arrow[0]),int(diff_arrow[1]))   
+				mag_to_car, angles_to_car = cv2.cartToPolar(int(diff_car[0]),int(diff_car[1]))
+				mag_to_lane, angles_to_lane = cv2.cartToPolar(int(diff_lane[0]),int(diff_lane[1]))
+
+				# angles in degrees
+				angles_arrow = angles_arrow[0] * 180/np.pi
+				angles_to_car = angles_to_car[0] * 180/np.pi
+				angles_to_lane = angles_to_lane[0] * 180/np.pi
+
+				if angles_to_lane - angles_to_car > 180:
+					if angles_arrow > angles_to_lane:
+						angles_arrow = angles_arrow - 360
+
+					angles_to_lane = angles_to_lane - 360
+					tmp = angles_to_lane
+					angles_to_lane = angles_to_car
+					angles_to_car = tmp
+
+
+
+				# see if there is overlap between bounding box and lane
+				boundingboxbin = np.zeros(size)
+				boundingboxbin[y:y_max , x:x_max] = 255
+				
+					# binary image of lanes and bounding box
+				tmp,thresh_lane = cv2.threshold(detected_lanes_matrix,1,255,cv2.THRESH_BINARY)
+				tmp,thresh_bound = cv2.threshold(boundingboxbin,1,255,cv2.THRESH_BINARY)
+
+					# see if there is any overlap
+				overlapmat = np.bitwise_and(thresh_lane>0, thresh_bound>0)*255
+				overlapmat = overlapmat.astype(np.uint8)
+				overlap = np.count_nonzero(overlapmat)
+
+				
+
+				## pick color of box
+				if overlap > 0:  
+					# if there is any sort of overlap, danger
+					boxcolor = (0,0,255)
+					cv2.putText(white_clip, "DANGER", (x, y - 5),
+						cv2.FONT_HERSHEY_SIMPLEX, 0.5, boxcolor, 2)
+					print(0,angles_to_car,angles_arrow,angles_to_lane)
+				else:
+					if mag_arrow[0] > 50:
+						# if optical flow is large
+						# conditions for warning
+						if angles_to_car <= angles_arrow and angles_arrow <= angles_to_lane:
+							print(1,angles_to_car,angles_arrow,angles_to_lane)
+							boxcolor = (0,165,255)
+							cv2.putText(white_clip, "WARNING", (x, y - 5),
+								cv2.FONT_HERSHEY_SIMPLEX, 0.5, boxcolor, 2)
+							cv2.arrowedLine(white_clip, pt1, pt3, [255,0,0], 2)
+							cv2.arrowedLine(white_clip, pt1, pt4, [255,0,0], 2)
+						elif abs(angles_to_car - angles_arrow) < 20 :
+							print(2,angles_to_car,angles_arrow,angles_to_lane)
+							boxcolor = (0,165,255)
+							cv2.putText(white_clip, "WARNING", (x, y - 5),
+								cv2.FONT_HERSHEY_SIMPLEX, 0.5, boxcolor, 2)
+						elif abs(angles_to_lane - angles_arrow) < 20 :
+							print(3,angles_to_car,angles_arrow,angles_to_lane)
+							boxcolor = (0,165,255)
+							cv2.putText(white_clip, "WARNING", (x, y - 5),
+								cv2.FONT_HERSHEY_SIMPLEX, 0.5, boxcolor, 2)
+					else:
+						# otherwise, all good
+						boxcolor = (0,255,0)
+
+
+				## draw a bounding box rectangle
+				cv2.rectangle(white_clip, (x, y), (x + w, y + h), boxcolor, 2)
+
+				## put label near the box
 				color = [int(c) for c in COLORS[classIDs[i]]]
-
-				cv2.rectangle(frame, (x, y), (x + w, y + h), color, 2)
 				text = "{}: {:.4f}".format(LABELS[classIDs[i]],
 					confidences[i])
-				cv2.putText(frame, text, (x, y - 5),
+				cv2.putText(white_clip, text, (x, y_max - 5),
 					cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)
 
-				## include information on optical flow
+				# draw optical flow arrow
+				cv2.arrowedLine(white_clip, pt1, pt2, boxcolor, 3)
+		################## END BOUNDING BOX LOOP #######################
 
-				mag_box = mag[y:y+h,x:x+w] # bound this from 0 to max size
-				avg = np.mean(mag_box)
-				if math.isnan(avg):
-					x_max = x+w;
-					y_max = y+h;
+		# end timer
+		endallbox = time.time()
+		print("[INFO] all box in this frame takes {:.4f} seconds".format(endallbox-startallbox))
 
-					if x < 0: 
-						x = 0
-					if y < 0:
-						y = 0
-					if x+w > size[0]:
-						x_max = size[0]
-					if y+h > size[1]:
-						y_max = size[1]
-					mag_box = mag[y:y_max,x:x_max]
-					avg = np.mean(mag_box)
-
-				text_opt = "Flow: {:0.4f}".format(avg)
-				cv2.putText(frame, text_opt, (x, y + 10),
-					cv2.FONT_HERSHEY_SIMPLEX, 0.5, [0,255,0], 2)
-
-				## put information on optical flow as well
-				cv2.rectangle(rgb, (x, y), (x + w, y + h), color, 2)
-				cv2.putText(rgb, text_opt, (x, y + 10),
-					cv2.FONT_HERSHEY_SIMPLEX, 0.5, [0,255,0], 2)
-
-
-		######## GET LANES JEAN ###########
-
-		detected_lanes_matrix, white_clip = lane1.process_image(frame)
-
-		###################################
-
-
-
+		end = time.time()
+		print("[INFO] single frame takes {:.4f} seconds".format(end-start))
 
 		# check if the video writer is None
 		if writer is None:
@@ -929,29 +1016,21 @@ if __name__ == "__main__":
 			# some information on processing single frame
 			if total > 0:
 				elap = (end - start)
-				print("[INFO] single frame took {:.4f} seconds".format(elap))
-				print("[INFO] estimated total time to finish: {:.4f}".format(
-					elap * total))
-		# write to video
-		if writer3 is None:
-			fourcc = cv2.VideoWriter_fourcc(*"MJPG")
-			writer3 = cv2.VideoWriter(file + "lane.avi", fourcc, 30,(frame.shape[1], frame.shape[0]), True)
+				print("[INFO] estimated total time to finish: {:.4f}".format(elap * total))
+	
+		# show image and write the output frame to disk
+		cv2.imshow('yolo',white_clip)
+		writer.write(white_clip)
+		print("\n")
 
-		# cv2.imshow('yolo',frame)
-		cv2.imshow('optical',frame)
+		# show other parts in windows
 		# cv2.imshow('lanes',detected_lanes_matrix)
-		# write the output frame to disk
-		writer.write(frame)
-		writer2.write(rgb)
-		writer3.write(detected_lanes_matrix)
-		######################### END FRAME LOOP ########################
+		######################## END FRAME LOOP ########################
 
 
 	# release the file pointers
 	print("[INFO] cleaning up...")
 	writer.release()
-	writer2.release()
-	writer3.release()
 	vs.release()
 
 	print('done')
