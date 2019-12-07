@@ -12,15 +12,15 @@ import time
 import cv2
 import os
 import math
-import matplotlib.pyplot as plt
-import matplotlib.image as mpimg
+# import matplotlib.pyplot as plt
+# import matplotlib.image as mpimg
 import glob
 import time
 import calibration
 # import farneback3d
 
-from moviepy.editor import VideoFileClip
-from IPython.display import HTML
+# from moviepy.editor import VideoFileClip
+# from IPython.display import HTML
 
 ##########   Calibration    ############
 
@@ -663,29 +663,14 @@ if __name__ == "__main__":
 
 	# leftupper  = (585, 460)
 	# rightupper = (705, 460)
-	# leftlower  = (210, img.shape[0])
-	# rightlower = (1080, img.shape[0])
+	# leftlower  = (210, frame1.shape[0])
+	# rightlower = (1080, frame1.shape[0])
 
     
     ######################################
 
 
 
-        ###########   Highway   ##############
-       
-#        if frame < 6:
-#            leftupper  = (390,1000)
-#            rightupper = (620,1000)
-#            leftlower  = (0, 1500)
-#            rightlower = (900, 1500)   
-#        else:
-# 
-#            leftupper  = (300,900)
-#            rightupper = (700,900)
-#            leftlower  = (0, 1500)
-#            rightlower = (img.shape[1], 1500)   
-    
-    ######################################  
 
 	    
     #############   343   ################
@@ -804,6 +789,8 @@ if __name__ == "__main__":
 		mag, ang = cv2.cartToPolar(flow[...,0], flow[...,1])  # convert to polar coord
 		size = mag.shape
 
+
+
 		# display in gui. required for cv2.imshow frames
 		k = cv2.waitKey(30) & 0xff
 		if k == 27:
@@ -836,6 +823,21 @@ if __name__ == "__main__":
 			rightlower = (900, frame.shape[0])   
 		#####################################
 
+
+        ###########   Highway   ##############
+       
+		# if counter < 6:
+		# 	leftupper  = (390,1000)
+		# 	rightupper = (620,1000)
+		# 	leftlower  = (0, 1500)
+		# 	rightlower = (1010, 1500)   
+		# else:
+		# 	leftupper  = (300,900)
+		# 	rightupper = (700,900)
+		# 	leftlower  = (0, 1500)
+		# 	rightlower = (frame.shape[1], 1500)   
+
+    ######################################  
 		src = np.float32([leftupper, leftlower, rightupper, rightlower])
 
 		cv2.line(frame, leftlower, leftupper, color_r, line_width)
@@ -958,28 +960,32 @@ if __name__ == "__main__":
 					boxcolor = (0,0,255)
 					cv2.putText(white_clip, "DANGER", (x, y - 5),
 						cv2.FONT_HERSHEY_SIMPLEX, 0.5, boxcolor, 2)
-					print(0,angles_to_car,angles_arrow,angles_to_lane)
+					# print(0,angles_to_car,angles_arrow,angles_to_lane)
 				else:
-					if mag_arrow[0] > 50:
+					if mag_arrow[0] > 30:
 						# if optical flow is large
 						# conditions for warning
 						if angles_to_car <= angles_arrow and angles_arrow <= angles_to_lane:
-							print(1,angles_to_car,angles_arrow,angles_to_lane)
+							# print(1,angles_to_car,angles_arrow,angles_to_lane)
 							boxcolor = (0,165,255)
 							cv2.putText(white_clip, "WARNING", (x, y - 5),
 								cv2.FONT_HERSHEY_SIMPLEX, 0.5, boxcolor, 2)
-							cv2.arrowedLine(white_clip, pt1, pt3, [255,0,0], 2)
-							cv2.arrowedLine(white_clip, pt1, pt4, [255,0,0], 2)
+							# cv2.arrowedLine(white_clip, pt1, pt3, [255,0,0], 2)
+							# cv2.arrowedLine(white_clip, pt1, pt4, [255,0,0], 2)
 						elif abs(angles_to_car - angles_arrow) < 20 :
-							print(2,angles_to_car,angles_arrow,angles_to_lane)
+							# print(2,angles_to_car,angles_arrow,angles_to_lane)
 							boxcolor = (0,165,255)
 							cv2.putText(white_clip, "WARNING", (x, y - 5),
 								cv2.FONT_HERSHEY_SIMPLEX, 0.5, boxcolor, 2)
 						elif abs(angles_to_lane - angles_arrow) < 20 :
-							print(3,angles_to_car,angles_arrow,angles_to_lane)
+							# print(3,angles_to_car,angles_arrow,angles_to_lane)
 							boxcolor = (0,165,255)
 							cv2.putText(white_clip, "WARNING", (x, y - 5),
 								cv2.FONT_HERSHEY_SIMPLEX, 0.5, boxcolor, 2)
+						else:
+							# otherwise, all good
+							boxcolor = (0,255,0)
+
 					else:
 						# otherwise, all good
 						boxcolor = (0,255,0)
@@ -1009,7 +1015,8 @@ if __name__ == "__main__":
 		# check if the video writer is None
 		if writer is None:
 			# initialize our video writer
-			fourcc = cv2.VideoWriter_fourcc(*"MJPG")
+			# fourcc = cv2.VideoWriter_fourcc(*'MP4V') # mp4
+			fourcc = cv2.VideoWriter_fourcc(*"MJPG")   # avi
 			writer = cv2.VideoWriter(arg_output, fourcc, 30,
 				(frame.shape[1], frame.shape[0]), True)
 
